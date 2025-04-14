@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Javascript Web Output #2</title>
+  <style>
+    body {
+      font-family: Arial;
+      margin: 20px;
+      background-color: #f2f2f2;
+    }
+    input {
+      margin: 5px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #000;
+      padding: 8px;
+      text-align: center;
+    }
+    .actions button {
+      margin: 0 5px;
+    }
+    .no-records {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <h2>Javascript Web Output #2</h2>
+  <div>
+    <input type="text" id="firstName" placeholder="First Name">
+    <input type="text" id="middleName" placeholder="Middle Name">
+    <input type="text" id="lastName" placeholder="Last Name">
+    <input type="number" id="age" placeholder="Age">
+    <button onclick="saveRecord()" id="submitBtn">Insert</button>
+    <button onclick="clearForm()">Clear</button>
+  </div>
+
+  <div>
+    <h3>Records</h3>
+    <table id="recordTable">
+      <thead>
+        <tr>
+          <th>First Name</th>
+          <th>Middle Name</th>
+          <th>Last Name</th>
+          <th>Age</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr class="no-records"><td colspan="5">No Records...</td></tr>
+      </tbody>
+    </table>
+    <br>
+    <button onclick="clearRecords()">Clear Records</button>
+    Sort by:
+    <select id="sortField">
+      <option value="">Please select</option>
+      <option value="firstName">First Name</option>
+      <option value="lastName">Last Name</option>
+      <option value="age">Age</option>
+    </select>
+    <select id="sortOrder">
+      <option value="">Please select</option>
+      <option value="asc">A-Z</option>
+      <option value="desc">Z-A</option>
+    </select>
+    <button onclick="saveToLocalStorage()">Save to Local Storage</button>
+  </div>
+
+  <script>
+    let records = JSON.parse(localStorage.getItem("records")) || [];
+    let editIndex = null;
+
+    function renderTable() {
+      const tbody = document.getElementById("tableBody");
+      tbody.innerHTML = "";
+
+      if (records.length === 0) {
+        tbody.innerHTML = '<tr class="no-records"><td colspan="5">No Records...</td></tr>';
+        return;
+      }
+
+      records.forEach((rec, index) => {
+        const row = `<tr>
+          <td>${rec.firstName}</td>
+          <td>${rec.middleName}</td>
+          <td>${rec.lastName}</td>
+          <td>${rec.age}</td>
+          <td class="actions">
+            <button onclick="deleteRecord(${index})">Delete</button>
+            <button onclick="editRecord(${index})">Edit</button>
+          </td>
+        </tr>`;
+        tbody.innerHTML += row;
+      });
+    }
+
+    function saveRecord() {
+      const firstName = document.getElementById("firstName").value.trim();
+      const middleName = document.getElementById("middleName").value.trim();
+      const lastName = document.getElementById("lastName").value.trim();
+      const age = document.getElementById("age").value;
+
+      if (!firstName || !middleName || !lastName || !age) {
+        alert("Please fill in all fields");
+        return;
+      }
+
+      const newRecord = { firstName, middleName, lastName, age };
+
+      if (editIndex === null) {
+        records.push(newRecord);
+      } else {
+        records[editIndex] = newRecord;
+        editIndex = null;
+        document.getElementById("submitBtn").innerText = "Insert";
+      }
+
+      clearForm();
+      renderTable();
+    }
+
+    function clearForm() {
+      document.getElementById("firstName").value = "";
+      document.getElementById("middleName").value = "";
+      document.getElementById("lastName").value = "";
+      document.getElementById("age").value = "";
+    }
+
+    function deleteRecord(index) {
+      records.splice(index, 1);
+      renderTable();
+    }
+
+    function editRecord(index) {
+      const rec = records[index];
+      document.getElementById("firstName").value = rec.firstName;
+      document.getElementById("middleName").value = rec.middleName;
+      document.getElementById("lastName").value = rec.lastName;
+      document.getElementById("age").value = rec.age;
+      editIndex = index;
+      document.getElementById("submitBtn").innerText = "Update";
+    }
+
+    function saveToLocalStorage() {
+      localStorage.setItem("records", JSON.stringify(records));
+      alert("Record Successfully Saved to Local Storage!");
+    }
+
+    function clearRecords() {
+      if (confirm("Are you sure you want to clear all records?")) {
+        records = [];
+        localStorage.removeItem("records");
+        renderTable();
+      }
+    }
+
+    document.getElementById("sortField").addEventListener("change", sortRecords);
+    document.getElementById("sortOrder").addEventListener("change", sortRecords);
+
+    function sortRecords() {
+      const field = document.getElementById("sortField").value;
+      const order = document.getElementById("sortOrder").value;
+      if (!field || !order) return;
+
+      records.sort((a, b) => {
+        if (field === "age") {
+          return order === "asc" ? a.age - b.age : b.age - a.age;
+        } else {
+          const nameA = a[field].toLowerCase();
+          const nameB = b[field].toLowerCase();
+          if (nameA < nameB) return order === "asc" ? -1 : 1;
+          if (nameA > nameB) return order === "asc" ? 1 : -1;
+          return 0;
+        }
+      });
+      renderTable();
+    }
+
+    renderTable();
+  </script>
+</body>
+</html>
